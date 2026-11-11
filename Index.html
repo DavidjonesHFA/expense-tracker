@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Personal Finance & Expense Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Touch friendly tap highlights & custom scrollbar */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        input, textarea, select {
+            user-select: text;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Glassmorphism utility */
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+        }
+        .dark .glass {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans min-h-screen flex justify-center selection:bg-brand-500 selection:text-white transition-colors duration-200">
+
+    <!-- App Container (Mobile Frame Constraint for Desktop viewing, Fullscreen on Mobile) -->
+    <div id="app-container" class="w-full max-w-md min-h-screen bg-slate-50 dark:bg-slate-900 shadow-2xl relative flex flex-col pb-24 overflow-x-hidden transition-colors duration-200">
+        
+        <!-- TOP APP BAR -->
+        <header class="sticky top-0 z-20 glass border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+                    <i data-lucide="wallet" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="text-base font-bold leading-tight tracking-tight text-slate-900 dark:text-white">Expense Tracker</h1>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium" id="current-month-year">Monthly Overview</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-1">
+                <button onclick="toggleDarkMode()" class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition">
+                    <i data-lucide="moon" id="theme-toggle-icon" class="w-5 h-5"></i>
+                </button>
+                <button onclick="openSyncModal()" class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition relative">
+                    <i data-lucide="cloud" class="w-5 h-5"></i>
+                    <span id="sync-indicator" class="hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN VIEW PORT (DYNAMICAL-SWITCHED VIA JS) -->
+        <main id="main-content" class="flex-1 p-4 space-y-5 overflow-y-auto">
+            <!-- Content render dynamically via JavaScript -->
+        </main>
+
+        <!-- BOTTOM NAVIGATION BAR -->
+        <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-30 glass border-t border-slate-200 dark:border-slate-800 px-4 py-2 flex items-center justify-between shadow-lg">
+            <button onclick="switchTab('home')" id="nav-home" class="flex flex-col items-center justify-center w-14 py-1 text-brand-600 dark:text-brand-400 font-medium transition">
+                <i data-lucide="home" class="w-5 h-5"></i>
+                <span class="text-[10px] mt-0.5">Home</span>
+            </button>
+            
+            <button onclick="switchTab('reports')" id="nav-reports" class="flex flex-col items-center justify-center w-14 py-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-medium transition">
+                <i data-lucide="pie-chart" class="w-5 h-5"></i>
+                <span class="text-[10px] mt-0.5">Details</span>
+            </button>
+
+            <!-- Floating Action Button for Transaction Addition -->
+            <div class="relative -top-5">
+                <button onclick="openTransactionModal()" class="w-13 h-13 rounded-full bg-gradient-to-tr from-brand-600 to-indigo-600 text-white p-3.5 shadow-lg shadow-brand-500/40 hover:scale-105 active:scale-95 transition transform flex items-center justify-center">
+                    <i data-lucide="plus" class="w-7 h-7 stroke-[2.5]"></i>
+                </button>
+            </div>
+
+            <button onclick="switchTab('accounts')" id="nav-accounts" class="flex flex-col items-center justify-center w-14 py-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-medium transition">
+                <i data-lucide="landmark" class="w-5 h-5"></i>
+                <span class="text-[10px] mt-0.5">Accounts</span>
+            </button>
+
+            <button onclick="openSyncModal()" id="nav-sync" class="flex flex-col items-center justify-center w-14 py-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-medium transition">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+                <span class="text-[10px] mt-0.5">Backup</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- MODAL CONTAINER (GENERIC / REUSABLE SLIDE UP SHEETS) -->
+    <div id="modal-backdrop" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200 flex items-end sm:items-center justify-center">
+        <div id="modal-panel" class="w-full max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl max-h-[90vh] overflow-y-auto p-5 shadow-2xl transform translate-y-full transition-transform duration-300 border border-slate-200 dark:border-slate-800">
+            <!-- Modal Body injected via JS -->
+            <div id="modal-content"></div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 transform -translate-y-20 opacity-0 transition-all duration-300 max-w-xs w-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-3 pointer-events-none">
+        <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5 text-emerald-400 dark:text-emerald-600 flex-shrink-0"></i>
+        <span id="toast-message" class="text-xs font-medium">Notification message</span>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // ==========================================
+        // APP CONFIG & CONSTANTS
+        // ==========================================
+        const CATEGORIES = [
+            { id: 'grocery', name: 'Grocery', icon: 'shopping-cart', color: '#10b981' },
+            { id: 'bills', name: 'Bills & Utilities', icon: 'zap', color: '#f59e0b' },
+            { id: 'fuel', name: 'Fuel & Maintenance', icon: 'fuel', color: '#ef4444' },
+            { id: 'food', name: 'Food & Drink', icon: 'utensils', color: '#8b5cf6' },
+            { id: 'person', name: 'Person', icon: 'user', color: '#ec4899' },
+            { id: 'home', name: 'Home', icon: 'home', color: '#06b6d4' },
+            { id: 'donations', name: 'Donations', icon: 'heart', color: '#14b8a6' },
+            { id: 'committee', name: 'Committee', icon: 'users', color: '#6366f1' },
+            { id: 'family', name: 'Family', icon: 'users-round', color: '#3b82f6' },
+            { id: 'transport', name: 'Transport', icon: 'bus', color: '#a855f7' },
+            { id: 'mobile', name: 'Mobile', icon: 'smartphone', color: '#0284c7' },
+            { id: 'health', name: 'Health & Fitness', icon: 'activity', color: '#f43f5e' },
+            { id: 'travel', name: 'Travel', icon: 'plane', color: '#f97316' },
+            { id: 'other', name: 'Other Expenses', icon: 'more-horizontal', color: '#64748b' }
+        ];
+
+        const PAKISTANI_BANKS = [
+            'Bank Al-Habib',
+            'Meezan Bank',
+            'HBL (Habib Bank)',
+            'UBL (United Bank)',
+            'MCB Bank',
+            'Allied Bank',
+            'Bank Alfalah',
+            'Faysal Bank',
+            'Standard Chartered',
+            'Askari Bank',
+            'Easypaisa',
+            'JazzCash',
+            'Nayapay',
+            'Sadapay',
+            'Other Bank'
+        ];
+
+        // Default initial state structure
+        const INITIAL_STATE = {
+            accounts: [
+                { id: 'acc_1', name: 'Meezan Bank', type: 'Bank', bankName: 'Meezan Bank', balance: 45000, active: true, isNegative: false },
+                { id: 'acc_2', name: 'Bank Al-Habib', type: 'Bank', bankName: 'Bank Al-Habib', balance: 125000, active: true, isNegative: false },
+                { id: 'acc_3', name: 'Cash Pocket', type: 'Cash', bankName: '', balance: 12400, active: true, isNegative: false },
+                { id: 'acc_4', name: 'Personal Loan (Ali)', type: 'Person', bankName: '', balance: -5000, active: true, isNegative: true }
+            ],
+            transactions: [
+                { id: 'tx_1', type: 'expense', amount: 8500, category: 'grocery', accountId: 'acc_1', date: new Date().toISOString().split('T')[0], note: 'Monthly Groceries' },
+                { id: 'tx_2', type: 'expense', amount: 3200, category: 'fuel', accountId: 'acc_2', date: new Date().toISOString().split('T')[0], note: 'Car Fuel Tank fill' },
+                { id: 'tx_3', type: 'income', amount: 180000, category: 'other', accountId: 'acc_2', date: new Date().toISOString().split('T')[0], note: 'Monthly Salary' },
+                { id: 'tx_4', type: 'expense', amount: 15000, category: 'committee', accountId: 'acc_1', date: new Date().toISOString().split('T')[0], note: 'Monthly Committee installment' },
+                { id: 'tx_5', type: 'expense', amount: 4500, category: 'bills', accountId: 'acc_1', date: new Date().toISOString().split('T')[0], note: 'K-Electric Bill' }
+            ],
+            syncUrl: '',
+            autoSync: false,
+            darkMode: false
+        };
+
+        // State Management
+        let appState = loadState();
+        let currentTab = 'home';
+        let activeAccountFilter = null;
+
+        function loadState() {
+            const saved = localStorage.getItem('pk_expense_tracker_db');
+            if (saved) {
+                try {
+                    return JSON.parse(saved);
+                } catch (e) {
+                    console.error('Error parsing storage state', e);
+                }
+            }
+            return INITIAL_STATE;
+        }
+
+        function saveState() {
+            localStorage.setItem('pk_expense_tracker_db', JSON.stringify(appState));
+            if (appState.autoSync && appState.syncUrl) {
+                triggerGoogleSheetsSync();
+            }
+        }
+
+        // ==========================================
+        // INITIALIZATION
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', () => {
+            // Apply Dark Mode Class
+            if (appState.darkMode) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+
+            // Set current date subtitle
+            const now = new Date();
+            document.getElementById('current-month-year').innerText = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            renderCurrentTab();
+            lucide.createIcons();
+        });
+
+        function toggleDarkMode() {
+            appState.darkMode = !appState.darkMode;
+            if (appState.darkMode) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            saveState();
+            renderCurrentTab();
+        }
+
+        // ==========================================
+        // NAVIGATION & TAB SWITCHING
+        // ==========================================
+        function switchTab(tabName) {
+            currentTab = tabName;
+            
+            // Update Navigation state UI
+            const tabs = ['home', 'reports', 'accounts'];
+            tabs.forEach(t => {
+                const el = document.getElementById(`nav-${t}`);
+                if (el) {
+                    if (t === tabName) {
+                        el.className = "flex flex-col items-center justify-center w-14 py-1 text-brand-600 dark:text-brand-400 font-semibold transition";
+                    } else {
+                        el.className = "flex flex-col items-center justify-center w-14 py-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-medium transition";
+                    }
+                }
+            });
+
+            renderCurrentTab();
+        }
+
+        function renderCurrentTab() {
+            const main = document.getElementById('main-content');
+            if (currentTab === 'home') {
+                main.innerHTML = renderHomeView();
+            } else if (currentTab === 'reports') {
+                main.innerHTML = renderExpenseDetailsView();
+            } else if (currentTab === 'accounts') {
+                main.innerHTML = renderAccountsFullView();
+            }
+            lucide.createIcons();
+        }
+
+        // ==========================================
+        // FORMATTERS & HELPERS
+        // ==========================================
+        function formatPKR(amount) {
+            const val = Math.abs(amount).toLocaleString('en-PK');
+            return `${amount < 0 ? '-' : ''}PKR ${val}`;
+        }
+
+        function getCategoryObj(catId) {
+            return CATEGORIES.find(c => c.id === catId) || { name: catId, icon: 'tag', color: '#64748b' };
+        }
+
+        function getAccountObj(accId) {
+            return appState.accounts.find(a => a.id === accId) || { name: 'Unknown', bankName: '' };
+        }
+
+        function getCurrentMonthTransactions() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth();
+
+            return appState.transactions.filter(t => {
+                const d = new Date(t.date);
+                return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+            });
+        }
+
+        // ==========================================
+        // HOME VIEW RENDERER
+        // ==========================================
+        function renderHomeView() {
+            const currentMonthTx = getCurrentMonthTransactions();
+            const totalMonthlyExpense = currentMonthTx
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + Number(t.amount), 0);
+
+            // Group Expenses by Category
+            const catExpenses = {};
+            currentMonthTx.filter(t => t.type === 'expense').forEach(t => {
+                catExpenses[t.category] = (catExpenses[t.category] || 0) + Number(t.amount);
+            });
+
+            // Calculate SVG Donut Pie Slice Data
+            let accumulatedPercent = 0;
+            const chartSlices = Object.entries(catExpenses).map(([catId, amount]) => {
+                const cat = getCategoryObj(catId);
+                const percent = totalMonthlyExpense > 0 ? (amount / totalMonthlyExpense) * 100 : 0;
+                const strokeDasharray = `${percent} ${100 - percent}`;
+                const strokeDashoffset = -accumulatedPercent;
+                accumulatedPercent += percent;
+                return {
+                    cat,
+                    amount,
+                    percent,
+                    strokeDasharray,
+                    strokeDashoffset
+                };
+            });
+
+            // Total Balance across active accounts
+            const totalNetBalance = appState.accounts
+                .filter(a => a.active)
+                .reduce((sum, a) => sum + (a.balance || 0), 0);
+
+            return `
+                <!-- TOTAL NET WORTH HEADER CARD -->
+                <div class="bg-gradient-to-r from-brand-700 via-brand-600 to-indigo-700 rounded-3xl p-5 text-white shadow-xl relative overflow-hidden">
+                    <div class="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-white/10 blur-xl"></div>
+                    <div class="relative z-10">
+                        <div class="flex justify-between items-center text-brand-100 text-xs font-medium mb-1">
+                            <span>Total Available Net Balance</span>
+                            <span class="px-2 py-0.5 rounded-full bg-white/20 text-[10px] uppercase font-bold">${appState.accounts.filter(a=>a.active).length} Accounts</span>
+                        </div>
+                        <div class="text-3xl font-extrabold tracking-tight">${formatPKR(totalNetBalance)}</div>
+                    </div>
+                </div>
+
+                <!-- SECTION 1: WHAT YOU HAVE (ACCOUNTS) -->
+                <section class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="wallet" class="w-4 h-4 text-brand-600 dark:text-brand-400"></i>
+                            <h2 class="text-sm font-bold tracking-tight text-slate-800 dark:text-slate-100 uppercase">What You Have</h2>
+                        </div>
+                        <button onclick="openAddAccountModal()" class="flex items-center space-x-1 text-xs font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/50 hover:bg-brand-100 px-2.5 py-1.5 rounded-xl transition">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                            <span>Add Account</span>
+                        </button>
+                    </div>
+
+                    <!-- Horizontal Scrollable Accounts list -->
+                    <div class="flex space-x-3 overflow-x-auto pb-2 pt-1 hide-scrollbar -mx-1 px-1">
+                        ${appState.accounts.filter(a => a.active).map(acc => `
+                            <div onclick="openAccountDetailModal('${acc.id}')" class="min-w-[150px] bg-white dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between space-y-2 group">
+                                <div class="flex justify-between items-start">
+                                    <div class="w-8 h-8 rounded-xl ${acc.type === 'Bank' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400' : acc.type === 'Cash' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400' : 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400'} flex items-center justify-center">
+                                        <i data-lucide="${acc.type === 'Bank' ? 'landmark' : acc.type === 'Cash' ? 'banknote' : 'user'}" class="w-4 h-4"></i>
+                                    </div>
+                                    <span class="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">${acc.type}</span>
+                                </div>
+                                <div>
+                                    <h3 class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate group-hover:text-brand-600 transition">${acc.name}</h3>
+                                    <p class="text-sm font-extrabold ${acc.balance < 0 ? 'text-rose-500' : 'text-slate-900 dark:text-white'} mt-0.5">${formatPKR(acc.balance)}</p>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </section>
+
+                <!-- SECTION 2: YOUR MONTHLY EXPENSE (DONUT CHART & BREAKDOWN) -->
+                <section class="bg-white dark:bg-slate-800/80 p-4 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100">Your Monthly Expense</h2>
+                            <p class="text-xs text-slate-400">Category-wise breakdown</p>
+                        </div>
+                        <button onclick="switchTab('reports')" class="flex items-center space-x-1 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline">
+                            <span>Expense Details</span>
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row items-center justify-around gap-4 pt-2">
+                        <!-- SVG Donut Chart -->
+                        <div class="relative w-36 h-36 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                <circle cx="18" cy="18" r="15.91549430918954" fill="transparent" stroke="#e2e8f0" stroke-width="3.8" class="dark:stroke-slate-700"></circle>
+                                ${chartSlices.length === 0 ? `
+                                    <circle cx="18" cy="18" r="15.91549430918954" fill="transparent" stroke="#cbd5e1" stroke-dasharray="100 0" stroke-width="3.8"></circle>
+                                ` : chartSlices.map(s => `
+                                    <circle cx="18" cy="18" r="15.91549430918954" fill="transparent" stroke="${s.cat.color}" stroke-width="3.8" stroke-dasharray="${s.strokeDasharray}" stroke-dashoffset="${s.strokeDashoffset}"></circle>
+                                `).join('')}
+                            </svg>
+                            <div class="absolute flex flex-col items-center justify-center text-center px-1">
+                                <span class="text-[10px] text-slate-400 font-medium">Spent This Month</span>
+                                <span class="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[90px]">${formatPKR(totalMonthlyExpense)}</span>
+                            </div>
+                        </div>
+
+                        <!-- Top Categories Quick Legend List -->
+                        <div class="w-full sm:w-auto flex-1 space-y-2">
+                            ${chartSlices.length === 0 ? `
+                                <p class="text-xs text-slate-400 text-center py-4">No expenses recorded for this month yet.</p>
+                            ` : chartSlices.slice(0, 4).map(s => `
+                                <div class="flex items-center justify-between text-xs">
+                                    <div class="flex items-center space-x-2 truncate">
+                                        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: ${s.cat.color}"></span>
+                                        <span class="text-slate-600 dark:text-slate-300 truncate">${s.cat.name}</span>
+                                    </div>
+                                    <span class="font-bold text-slate-800 dark:text-slate-200 ml-2">${formatPKR(s.amount)}</span>
+                                </div>
+                            `).join('')}
+                            ${chartSlices.length > 4 ? `
+                                <p class="text-[11px] text-brand-600 dark:text-brand-400 font-medium text-right pt-1">+ ${chartSlices.length - 4} more categories</p>
+                            ` : ''}
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 3: RECENT TRANSACTIONS -->
+                <section class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="history" class="w-4 h-4 text-brand-600 dark:text-brand-400"></i>
+                            <h2 class="text-sm font-bold tracking-tight text-slate-800 dark:text-slate-100 uppercase">Recent Transactions</h2>
+                        </div>
+                        <span class="text-xs text-slate-400">${appState.transactions.length} Total</span>
+                    </div>
+
+                    <div class="space-y-2">
+                        ${appState.transactions.length === 0 ? `
+                            <div class="bg-white dark:bg-slate-800/50 p-6 text-center rounded-2xl border border-slate-200 dark:border-slate-800">
+                                <p class="text-xs text-slate-400">No transactions recorded yet. Tap '+' below to add your first expense or income!</p>
+                            </div>
+                        ` : appState.transactions.slice(0, 7).map(tx => {
+                            const cat = getCategoryObj(tx.category);
+                            const acc = getAccountObj(tx.accountId);
+                            const isExpense = tx.type === 'expense';
+                            const isTransfer = tx.type === 'transfer';
+                            return `
+                                <div class="bg-white dark:bg-slate-800/80 p-3 rounded-2xl border border-slate-200/70 dark:border-slate-800 shadow-sm flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-white" style="background-color: ${isTransfer ? '#6366f1' : cat.color}">
+                                            <i data-lucide="${isTransfer ? 'arrow-right-left' : cat.icon}" class="w-5 h-5"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100">${isTransfer ? 'Account Transfer' : cat.name}</h4>
+                                            <p class="text-[11px] text-slate-400 flex items-center space-x-1">
+                                                <span>${acc.name}</span>
+                                                <span>•</span>
+                                                <span>${tx.date}</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xs font-bold ${isExpense ? 'text-rose-500' : tx.type === 'income' ? 'text-emerald-500' : 'text-indigo-500'}">
+                                            ${isExpense ? '-' : tx.type === 'income' ? '+' : ''}${formatPKR(tx.amount)}
+                                        </div>
+                                        ${tx.note ? `<p class="text-[10px] text-slate-400 truncate max-w-[100px]">${tx.note}</p>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </section>
+            `;
+        }
+
+        // ==========================================
+        // EXPENSE DETAILS & REPORTS VIEW RENDERER
+        // ==========================================
+        function renderExpenseDetailsView() {
+            const currentMonthTx = getCurrentMonthTransactions();
+
+            const totalIncome = currentMonthTx
+                .filter(t => t.type === 'income')
+                .reduce((sum, t) => sum + Number(t.amount), 0);
+
+            const totalExpense = currentMonthTx
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + Number(t.amount), 0);
+
+            // Group Expenses by Category
+            const categorySums = {};
+            CATEGORIES.forEach(c => categorySums[c.id] = 0);
+            
+            currentMonthTx.filter(t => t.type === 'expense').forEach(t => {
+                categorySums[t.category] = (categorySums[t.category] || 0) + Number(t.amount);
+            });
+
+            return `
+                <div class="space-y-4">
+                    <!-- SECTION 1: INCOME VS EXPENSE SUMMARY CARD -->
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Month Income vs Expense Summary</h2>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-emerald-50 dark:bg-emerald-950/40 p-3.5 rounded-2xl border border-emerald-200/50 dark:border-emerald-900/50">
+                                <div class="flex items-center space-x-1.5 text-emerald-600 dark:text-emerald-400 mb-1">
+                                    <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
+                                    <span class="text-xs font-semibold">Total Income</span>
+                                </div>
+                                <p class="text-base font-extrabold text-emerald-700 dark:text-emerald-300">${formatPKR(totalIncome)}</p>
+                            </div>
+
+                            <div class="bg-rose-50 dark:bg-rose-950/40 p-3.5 rounded-2xl border border-rose-200/50 dark:border-rose-900/50">
+                                <div class="flex items-center space-x-1.5 text-rose-600 dark:text-rose-400 mb-1">
+                                    <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+                                    <span class="text-xs font-semibold">Total Expense</span>
+                                </div>
+                                <p class="text-base font-extrabold text-rose-700 dark:text-rose-300">${formatPKR(totalExpense)}</p>
+                            </div>
+                        </div>
+
+                        <!-- Savings Rate Indicator Bar -->
+                        <div class="pt-2">
+                            <div class="flex justify-between text-xs text-slate-500 mb-1 font-medium">
+                                <span>Net Savings Ratio</span>
+                                <span>${totalIncome > 0 ? Math.max(0, Math.round(((totalIncome - totalExpense) / totalIncome) * 100)) : 0}%</span>
+                            </div>
+                            <div class="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden flex">
+                                <div class="h-full bg-emerald-500 transition-all duration-500" style="width: ${totalIncome > 0 ? Math.min(100, Math.max(0, ((totalIncome - totalExpense) / totalIncome) * 100)) : 0}%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: DETAILED CATEGORY EXPENSE LIST -->
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+                        <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100">Category Wise Breakdown</h2>
+                        <div class="space-y-3 pt-1">
+                            ${CATEGORIES.map(cat => {
+                                const spent = categorySums[cat.id] || 0;
+                                const percentage = totalExpense > 0 ? ((spent / totalExpense) * 100).toFixed(1) : 0;
+                                return `
+                                    <div class="space-y-1.5">
+                                        <div class="flex items-center justify-between text-xs">
+                                            <div class="flex items-center space-x-2">
+                                                <div class="w-7 h-7 rounded-lg flex items-center justify-center text-white" style="background-color: ${cat.color}">
+                                                    <i data-lucide="${cat.icon}" class="w-3.5 h-3.5"></i>
+                                                </div>
+                                                <span class="font-semibold text-slate-700 dark:text-slate-200">${cat.name}</span>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="font-bold text-slate-900 dark:text-white">${formatPKR(spent)}</span>
+                                                <span class="text-[10px] text-slate-400 ml-1">(${percentage}%)</span>
+                                            </div>
+                                        </div>
+                                        <div class="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                                            <div class="h-full rounded-full transition-all duration-300" style="width: ${percentage}%; background-color: ${cat.color}"></div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // ACCOUNTS MANAGEMENT FULL VIEW
+        // ==========================================
+        function renderAccountsFullView() {
+            return `
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">All Your Accounts</h2>
+                        <button onclick="openAddAccountModal()" class="flex items-center space-x-1.5 text-xs font-semibold bg-brand-600 text-white px-3 py-2 rounded-xl hover:bg-brand-700 transition">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>New Account</span>
+                        </button>
+                    </div>
+
+                    <div class="space-y-3">
+                        ${appState.accounts.map(acc => `
+                            <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 rounded-xl ${acc.type === 'Bank' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600' : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600'} flex items-center justify-center">
+                                        <i data-lucide="${acc.type === 'Bank' ? 'landmark' : acc.type === 'Cash' ? 'banknote' : 'user'}" class="w-5 h-5"></i>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center space-x-2">
+                                            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">${acc.name}</h3>
+                                            ${!acc.active ? `<span class="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Inactive</span>` : ''}
+                                        </div>
+                                        <p class="text-xs text-slate-400">${acc.type} ${acc.bankName ? `• ${acc.bankName}` : ''}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-sm font-extrabold ${acc.balance < 0 ? 'text-rose-500' : 'text-slate-900 dark:text-white'}">${formatPKR(acc.balance)}</span>
+                                    <button onclick="openAccountDetailModal('${acc.id}')" class="p-2 text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                                        <i data-lucide="settings-2" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // MODALS HANDLER & UI GENERATORS
+        // ==========================================
+        function showModal(htmlContent) {
+            const backdrop = document.getElementById('modal-backdrop');
+            const panel = document.getElementById('modal-panel');
+            const content = document.getElementById('modal-content');
+
+            content.innerHTML = htmlContent;
+            backdrop.classList.remove('hidden');
+            
+            // Animation trigger
+            setTimeout(() => {
+                backdrop.classList.remove('opacity-0');
+                panel.classList.remove('translate-y-full');
+            }, 10);
+            
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            const backdrop = document.getElementById('modal-backdrop');
+            const panel = document.getElementById('modal-panel');
+
+            panel.classList.add('translate-y-full');
+            backdrop.classList.add('opacity-0');
+            setTimeout(() => {
+                backdrop.classList.add('hidden');
+            }, 300);
+        }
+
+        // 1. ADD ACCOUNT MODAL
+        function openAddAccountModal() {
+            const html = `
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white">Add New Account</h3>
+                        <button onclick="closeModal()" class="p-1 rounded-lg text-slate-400 hover:text-slate-600">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <form onsubmit="handleCreateAccount(event)" class="space-y-3 text-xs">
+                        <div>
+                            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Account Category Type</label>
+                            <select id="acc-type-select" onchange="toggleBankDropdown(this.value)" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-brand-500 outline-none">
+                                <option value="Bank">Bank Account</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Person">Person (Borrow/Lend)</option>
+                            </select>
+                        </div>
+
+                        <div id="bank-select-container">
+                            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Select Bank (Pakistan)</label>
+                            <select id="acc-bank-name" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-brand-500 outline-none">
+                                ${PAKISTANI_BANKS.map(b => `<option value="${b}">${b}</option>`).join('')}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Account Display Name</label>
+                            <input type="text" id="acc-name" placeholder="e.g. Meezan Salary / Wallet Cash" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Opening Balance (PKR)</label>
+                            <input type="number" id="acc-balance" placeholder="0" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Balance Status</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="acc-sign" value="positive" checked class="peer hidden">
+                                    <div class="p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-center font-bold text-slate-600 dark:text-slate-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 dark:peer-checked:bg-emerald-950/50 peer-checked:text-emerald-600 transition">
+                                        + Positive (Money Available)
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="acc-sign" value="negative" class="peer hidden">
+                                    <div class="p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-center font-bold text-slate-600 dark:text-slate-300 peer-checked:border-rose-500 peer-checked:bg-rose-50 dark:peer-checked:bg-rose-950/50 peer-checked:text-rose-600 transition">
+                                        - Negative (Owe Money)
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-md transition mt-4">Save Account</button>
+                    </form>
+                </div>
+            `;
+            showModal(html);
+        }
+
+        function toggleBankDropdown(type) {
+            const container = document.getElementById('bank-select-container');
+            if (container) {
+                container.style.display = type === 'Bank' ? 'block' : 'none';
+            }
+        }
+
+        function handleCreateAccount(e) {
+            e.preventDefault();
+            const type = document.getElementById('acc-type-select').value;
+            const bankName = type === 'Bank' ? document.getElementById('acc-bank-name').value : '';
+            const name = document.getElementById('acc-name').value;
+            let rawBalance = parseFloat(document.getElementById('acc-balance').value) || 0;
+            const sign = document.querySelector('input[name="acc-sign"]:checked').value;
+            
+            const balance = sign === 'negative' ? -Math.abs(rawBalance) : Math.abs(rawBalance);
+
+            const newAccount = {
+                id: 'acc_' + Date.now(),
+                name,
+                type,
+                bankName,
+                balance,
+                active: true,
+                isNegative: sign === 'negative'
+            };
+
+            appState.accounts.push(newAccount);
+            saveState();
+            closeModal();
+            renderCurrentTab();
+            showToast('Account added successfully');
+        }
+
+        // 2. ACCOUNT DETAIL & EDIT MODAL
+        function openAccountDetailModal(accId) {
+            const acc = getAccountObj(accId);
+            const accTransactions = appState.transactions.filter(t => t.accountId === accId);
+
+            const html = `
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900 dark:text-white">${acc.name}</h3>
+                            <p class="text-xs text-slate-400">${acc.type} ${acc.bankName ? `• ${acc.bankName}` : ''}</p>
+                        </div>
+                        <button onclick="closeModal()" class="p-1 rounded-lg text-slate-400 hover:text-slate-600">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <!-- ACCOUNT EDIT FORM -->
+                    <form onsubmit="handleUpdateAccount(event, '${acc.id}')" class="space-y-3 text-xs bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-200 dark:border-slate-800">
+                        <h4 class="font-bold text-slate-800 dark:text-slate-200">Edit Account Information</h4>
+                        
+                        <div>
+                            <label class="block font-medium text-slate-600 dark:text-slate-400 mb-1">Account Name</label>
+                            <input type="text" id="edit-acc-name" value="${acc.name}" required class="w-full p-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block font-medium text-slate-600 dark:text-slate-400 mb-1">Balance</label>
+                            <input type="number" id="edit-acc-balance" value="${Math.abs(acc.balance)}" required class="w-full p-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block font-medium text-slate-600 dark:text-slate-400 mb-1">Balance Status</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="edit-acc-sign" value="positive" ${acc.balance >= 0 ? 'checked' : ''} class="peer hidden">
+                                    <div class="p-2 rounded-xl border border-slate-300 dark:border-slate-700 text-center font-bold text-slate-600 dark:text-slate-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 dark:peer-checked:bg-emerald-950/50 peer-checked:text-emerald-600 transition">
+                                        + Positive
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="edit-acc-sign" value="negative" ${acc.balance < 0 ? 'checked' : ''} class="peer hidden">
+                                    <div class="p-2 rounded-xl border border-slate-300 dark:border-slate-700 text-center font-bold text-slate-600 dark:text-slate-300 peer-checked:border-rose-500 peer-checked:bg-rose-50 dark:peer-checked:bg-rose-950/50 peer-checked:text-rose-600 transition">
+                                        - Negative (Owe)
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center space-x-2 pt-1">
+                            <button type="submit" class="flex-1 py-2 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition">Update</button>
+                            <button type="button" onclick="toggleAccountActiveStatus('${acc.id}')" class="px-3 py-2 bg-slate-200 dark:bg-slate-700 font-bold rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-300 transition">
+                                ${acc.active ? 'Deactivate' : 'Activate'}
+                            </button>
+                            <button type="button" onclick="deleteAccount('${acc.id}')" class="px-3 py-2 bg-rose-100 dark:bg-rose-950/60 font-bold rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-200 transition">
+                                Delete
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- ACCOUNT TRANSACTIONS LIST -->
+                    <div class="space-y-2">
+                        <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200">Account Transaction History</h4>
+                        <div class="max-h-48 overflow-y-auto space-y-2 pr-1">
+                            ${accTransactions.length === 0 ? `<p class="text-xs text-slate-400 text-center py-2">No transactions for this account yet.</p>` : 
+                            accTransactions.map(t => {
+                                const cat = getCategoryObj(t.category);
+                                return `
+                                    <div class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 flex items-center justify-between text-xs">
+                                        <div class="flex items-center space-x-2">
+                                            <i data-lucide="${cat.icon}" class="w-4 h-4 text-slate-500"></i>
+                                            <div>
+                                                <p class="font-semibold text-slate-800 dark:text-slate-200">${cat.name}</p>
+                                                <p class="text-[10px] text-slate-400">${t.date}</p>
+                                            </div>
+                                        </div>
+                                        <span class="font-bold ${t.type === 'expense' ? 'text-rose-500' : 'text-emerald-500'}">
+                                            ${t.type === 'expense' ? '-' : '+'}${formatPKR(t.amount)}
+                                        </span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            showModal(html);
+        }
+
+        function handleUpdateAccount(e, accId) {
+            e.preventDefault();
+            const name = document.getElementById('edit-acc-name').value;
+            let rawBalance = parseFloat(document.getElementById('edit-acc-balance').value) || 0;
+            const sign = document.querySelector('input[name="edit-acc-sign"]:checked').value;
+
+            const acc = getAccountObj(accId);
+            acc.name = name;
+            acc.balance = sign === 'negative' ? -Math.abs(rawBalance) : Math.abs(rawBalance);
+            acc.isNegative = (sign === 'negative');
+
+            saveState();
+            closeModal();
+            renderCurrentTab();
+            showToast('Account updated');
+        }
+
+        function toggleAccountActiveStatus(accId) {
+            const acc = getAccountObj(accId);
+            acc.active = !acc.active;
+            saveState();
+            closeModal();
+            renderCurrentTab();
+            showToast(acc.active ? 'Account activated' : 'Account deactivated');
+        }
+
+        function deleteAccount(accId) {
+            appState.accounts = appState.accounts.filter(a => a.id !== accId);
+            saveState();
+            closeModal();
+            renderCurrentTab();
+            showToast('Account deleted');
+        }
+
+        // 3. TRANSACTION MODAL (EXPENSE / INCOME / TRANSFER)
+        function openTransactionModal() {
+            const activeAccounts = appState.accounts.filter(a => a.active);
+
+            if (activeAccounts.length === 0) {
+                showToast('Please add an account first!');
+                openAddAccountModal();
+                return;
+            }
+
+            const html = `
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white">New Transaction</h3>
+                        <button onclick="closeModal()" class="p-1 rounded-lg text-slate-400 hover:text-slate-600">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <!-- TYPE TABS -->
+                    <div class="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                        <button type="button" onclick="setTxType('expense')" id="btn-tx-expense" class="py-2 rounded-lg font-bold text-xs bg-white dark:bg-slate-700 text-rose-600 shadow-sm transition">Expense</button>
+                        <button type="button" onclick="setTxType('income')" id="btn-tx-income" class="py-2 rounded-lg font-bold text-xs text-slate-600 dark:text-slate-400 transition">Income</button>
+                        <button type="button" onclick="setTxType('transfer')" id="btn-tx-transfer" class="py-2 rounded-lg font-bold text-xs text-slate-600 dark:text-slate-400 transition">Transfer</button>
+                    </div>
+
+                    <form onsubmit="handleCreateTransaction(event)" class="space-y-3 text-xs">
+                        <input type="hidden" id="tx-type-input" value="expense">
+
+                        <div>
+                            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Amount (PKR)</label>
+                            <input type="number" id="tx-amount" placeholder="0" required class="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-base font-extrabold focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+
+                        <!-- CATEGORY SELECTION (EXPENSE / INCOME ONLY) -->
+                        <div id="tx-category-section">
+                            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Category</label>
+                            <select id="tx-category-select" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-brand-500 outline-none">
+                                ${CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                            </select>
+                        </div>
+
+                        <!-- SINGLE ACCOUNT (FOR EXPENSE/INCOME) -->
+                        <div id="tx-account-single-section">
+                            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Select Account</label>
+                            <select id="tx-account-select" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-brand-500 outline-none">
+                                ${activeAccounts.map(a => `<option value="${a.id}">${a.name} (${formatPKR(a.balance)})</option>`).join('')}
+                            </select>
+                        </div>
+
+                        <!-- TRANSFER ACCOUNTS (PAY FROM & PAY TO) -->
+                        <div id="tx-account-transfer-section" class="hidden space-y-2">
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Pay From (Source Account)</label>
+                                <select id="tx-account-from" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-brand-500 outline-none">
+                                    ${activeAccounts.map(a => `<option value="${a.id}">${a.name} (${formatPKR(a.balance)})</option>`).join('')}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Pay To (Destination Account)</label>
+                                <select id="tx-account-to" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-brand-500 outline-none">
+                                    ${activeAccounts.map(a => `<option value="${a.id}">${a.name} (${formatPKR(a.balance)})</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Date</label>
+                                <input type="date" id="tx-date" value="${new Date().toISOString().split('T')[0]}" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium outline-none">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Note (Optional)</label>
+                                <input type="text" id="tx-note" placeholder="Description" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium outline-none">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-md transition mt-4">Record Transaction</button>
+                    </form>
+                </div>
+            `;
+            showModal(html);
+        }
+
+        function setTxType(type) {
+            document.getElementById('tx-type-input').value = type;
+            const btnExpense = document.getElementById('btn-tx-expense');
+            const btnIncome = document.getElementById('btn-tx-income');
+            const btnTransfer = document.getElementById('btn-tx-transfer');
+
+            const singleSec = document.getElementById('tx-account-single-section');
+            const transferSec = document.getElementById('tx-account-transfer-section');
+            const catSec = document.getElementById('tx-category-section');
+
+            // Reset Tab styling
+            [btnExpense, btnIncome, btnTransfer].forEach(b => b.className = "py-2 rounded-lg font-bold text-xs text-slate-600 dark:text-slate-400 transition");
+
+            if (type === 'expense') {
+                btnExpense.className = "py-2 rounded-lg font-bold text-xs bg-white dark:bg-slate-700 text-rose-600 shadow-sm transition";
+                singleSec.classList.remove('hidden');
+                catSec.classList.remove('hidden');
+                transferSec.classList.add('hidden');
+            } else if (type === 'income') {
+                btnIncome.className = "py-2 rounded-lg font-bold text-xs bg-white dark:bg-slate-700 text-emerald-600 shadow-sm transition";
+                singleSec.classList.remove('hidden');
+                catSec.classList.remove('hidden');
+                transferSec.classList.add('hidden');
+            } else if (type === 'transfer') {
+                btnTransfer.className = "py-2 rounded-lg font-bold text-xs bg-white dark:bg-slate-700 text-indigo-600 shadow-sm transition";
+                singleSec.classList.add('hidden');
+                catSec.classList.add('hidden');
+                transferSec.classList.remove('hidden');
+            }
+        }
+
+        function handleCreateTransaction(e) {
+            e.preventDefault();
+            const type = document.getElementById('tx-type-input').value;
+            const amount = parseFloat(document.getElementById('tx-amount').value);
+            const date = document.getElementById('tx-date').value;
+            const note = document.getElementById('tx-note').value;
+
+            if (!amount || amount <= 0) {
+                showToast('Please enter a valid amount');
+                return;
+            }
+
+            if (type === 'transfer') {
+                const fromId = document.getElementById('tx-account-from').value;
+                const toId = document.getElementById('tx-account-to').value;
+
+                if (fromId === toId) {
+                    showToast('Source and Destination accounts must be different');
+                    return;
+                }
+
+                const fromAcc = getAccountObj(fromId);
+                const toAcc = getAccountObj(toId);
+
+                fromAcc.balance -= amount;
+                toAcc.balance += amount;
+
+                appState.transactions.unshift({
+                    id: 'tx_' + Date.now(),
+                    type: 'transfer',
+                    amount,
+                    category: 'other',
+                    accountId: fromId,
+                    toAccountId: toId,
+                    date,
+                    note: note || `Transfer to ${toAcc.name}`
+                });
+            } else {
+                const category = document.getElementById('tx-category-select').value;
+                const accountId = document.getElementById('tx-account-select').value;
+                const acc = getAccountObj(accountId);
+
+                if (type === 'expense') {
+                    acc.balance -= amount;
+                } else if (type === 'income') {
+                    acc.balance += amount;
+                }
+
+                appState.transactions.unshift({
+                    id: 'tx_' + Date.now(),
+                    type,
+                    amount,
+                    category,
+                    accountId,
+                    date,
+                    note
+                });
+            }
+
+            saveState();
+            closeModal();
+            renderCurrentTab();
+            showToast('Transaction saved');
+        }
+
+        // 4. GOOGLE SHEETS / BACKUP & EXPORT MODAL
+        function openSyncModal() {
+            const html = `
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white">Backup & Data Sync</h3>
+                        <button onclick="closeModal()" class="p-1 rounded-lg text-slate-400 hover:text-slate-600">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <!-- GOOGLE SHEETS SYNC -->
+                    <div class="space-y-3 bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
+                                <i data-lucide="sheet" class="w-4 h-4 text-emerald-600"></i>
+                                <span>Google Sheets Auto-Sync</span>
+                            </span>
+                            <input type="checkbox" id="sync-auto-toggle" ${appState.autoSync ? 'checked' : ''} onchange="toggleAutoSync(this.checked)" class="w-4 h-4 text-brand-600 rounded">
+                        </div>
+                        <p class="text-slate-400 text-[11px]">Paste your Google Apps Script Webhook URL to back up data directly to Google Sheets on update.</p>
+                        <input type="url" id="sync-url-input" value="${appState.syncUrl || ''}" placeholder="https://script.google.com/macros/s/.../exec" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-[11px] outline-none">
+                        <button onclick="saveSyncSettings()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition">Save & Sync Now</button>
+                    </div>
+
+                    <!-- LOCAL FILE BACKUP & RESTORE -->
+                    <div class="space-y-2 text-xs">
+                        <h4 class="font-bold text-slate-800 dark:text-slate-200">Local Offline Data Backup</h4>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="exportJSONBackup()" class="py-2.5 bg-slate-200 dark:bg-slate-700 font-bold rounded-xl text-slate-800 dark:text-slate-100 hover:bg-slate-300 transition flex items-center justify-center space-x-1">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                                <span>Export JSON</span>
+                            </button>
+                            <label class="py-2.5 bg-slate-200 dark:bg-slate-700 font-bold rounded-xl text-slate-800 dark:text-slate-100 hover:bg-slate-300 transition flex items-center justify-center space-x-1 cursor-pointer">
+                                <i data-lucide="upload" class="w-4 h-4"></i>
+                                <span>Restore JSON</span>
+                                <input type="file" accept=".json" onchange="importJSONBackup(event)" class="hidden">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- CSV EXPORT -->
+                    <div class="text-xs">
+                        <button onclick="exportCSV()" class="w-full py-2.5 bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-900 font-bold rounded-xl transition flex items-center justify-center space-x-1.5">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                            <span>Download CSV Report</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+            showModal(html);
+        }
+
+        function saveSyncSettings() {
+            const url = document.getElementById('sync-url-input').value.trim();
+            appState.syncUrl = url;
+            saveState();
+            if (url) {
+                triggerGoogleSheetsSync();
+            } else {
+                showToast('Sync settings saved');
+            }
+        }
+
+        function toggleAutoSync(checked) {
+            appState.autoSync = checked;
+            saveState();
+        }
+
+        function triggerGoogleSheetsSync() {
+            if (!appState.syncUrl) return;
+
+            const indicator = document.getElementById('sync-indicator');
+            if (indicator) indicator.classList.remove('hidden');
+
+            fetch(appState.syncUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(appState)
+            }).then(() => {
+                showToast('Synced to Google Sheets');
+            }).catch(err => {
+                console.error(err);
+                showToast('Sync failed');
+            }).finally(() => {
+                if (indicator) indicator.classList.add('hidden');
+            });
+        }
+
+        function exportJSONBackup() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `ExpenseTracker_Backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importJSONBackup(event) {
+            const fileReader = new FileReader();
+            fileReader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed && parsed.accounts && parsed.transactions) {
+                        appState = parsed;
+                        saveState();
+                        closeModal();
+                        renderCurrentTab();
+                        showToast('Backup restored successfully!');
+                    } else {
+                        showToast('Invalid backup file structure');
+                    }
+                } catch (err) {
+                    showToast('Error reading backup file');
+                }
+            };
+            fileReader.readAsText(event.target.files[0]);
+        }
+
+        function exportCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,ID,Type,Amount (PKR),Category,Account,Date,Note\n";
+            appState.transactions.forEach(t => {
+                const acc = getAccountObj(t.accountId);
+                const cat = getCategoryObj(t.category);
+                csvContent += `"${t.id}","${t.type}","${t.amount}","${cat.name}","${acc.name}","${t.date}","${t.note || ''}"\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Transactions_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+
+        // ==========================================
+        // TOAST NOTIFICATIONS
+        // ==========================================
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            toastMsg.innerText = message;
+
+            toast.classList.remove('-translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('-translate-y-20', 'opacity-0');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
